@@ -33,3 +33,12 @@ D:\study\cursor1\pet_window\bin\Release\net8.0-windows\Skins\Mochi\mochi_02.png
 D:\study\cursor1\pet_window\bin\Release\net8.0-windows\Skins\Mochi\mochi_03.png
 D:\study\cursor1\pet_window\bin\Release\net8.0-windows\Skins\Mochi\mochi_04.png
 D:\study\cursor1\pet_window\bin\Release\net8.0-windows\Skins\Mochi\README.txt
+d:\study\cursor1\pet_window\obj\Release\net8.0-windows\HudTokenWindow.baml
+d:\study\cursor1\pet_window\obj\Release\net8.0-windows\Themes\GameHud.baml
+d:\study\cursor1\pet_window\obj\Release\net8.0-windows\HudTokenWindow.g.cs
+d:\study\cursor1\pet_window\obj\Release\net8.0-windows\PetWindow.sourcelink.json
+D:\study\cursor1\pet_window\bin\Release\net8.0-windows\Skins\Doggo\README.txt
+D:\study\cursor1\pet_window\bin\Release\net8.0-windows\Skins\Doggo\woof_01.png
+D:\study\cursor1\pet_window\bin\Release\net8.0-windows\Skins\Doggo\woof_02.png
+D:\study\cursor1\pet_window\bin\Release\net8.0-windows\Skins\Doggo\woof_03.png
+D:\study\cursor1\pet_window\bin\Release\net8.0-windows\Skins\Doggo\woof_04.png

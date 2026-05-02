@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO;
-using System.Media;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -36,6 +35,9 @@ public partial class MainWindow : Window
     private int _lastChimeHour = -1;
     private DispatcherTimer? _edgeHideDelayTimer;
     private bool _shuttingDown;
+    private readonly Random _rng = new();
+    private DateTime _nextCareUtc;
+    private bool _dragSoundPlayed;
 
     public MainWindow()
     {
@@ -66,7 +68,11 @@ public partial class MainWindow : Window
         PetHitArea.MouseLeftButtonDown += PetHitAreaOnMouseLeftButtonDown;
         PetHitArea.MouseMove += PetHitAreaOnMouseMove;
         PetHitArea.MouseLeftButtonUp += PetHitAreaOnMouseLeftButtonUp;
-        PetHitArea.MouseEnter += (_, _) => ExpandEdgeHidden();
+        PetHitArea.MouseEnter += (_, _) =>
+        {
+            ExpandEdgeHidden();
+            PetInteractionSounds.PlayHover();
+        };
         PetHitArea.MouseLeave += (_, _) => ScheduleEdgeHide();
 
         MouseRightButtonUp += WindowOnMouseRightButtonUp;
@@ -74,6 +80,8 @@ public partial class MainWindow : Window
         ApplySettingsFromStore();
         ReloadSkinFrames();
         EnsureTrayIcon();
+
+        _nextCareUtc = DateTime.UtcNow.AddSeconds(_rng.Next(35, 95));
 
         _clockTimer.Start();
         if (_settings.ShowSidePanel)
@@ -86,6 +94,7 @@ public partial class MainWindow : Window
         _winLeftStart = Left;
         _winTopStart = Top;
         _hasDragged = false;
+        _dragSoundPlayed = false;
         PetHitArea.CaptureMouse();
         e.Handled = true;
     }
@@ -98,7 +107,16 @@ public partial class MainWindow : Window
         var dx = cur.X - _dragScreenStart.X;
         var dy = cur.Y - _dragScreenStart.Y;
         if (Math.Abs(dx) > 4 || Math.Abs(dy) > 4)
+        {
+            if (!_dragSoundPlayed)
+            {
+                _dragSoundPlayed = true;
+                PetInteractionSounds.PlayDragStart();
+            }
+
             _hasDragged = true;
+        }
+
         Left = _winLeftStart + dx;
         Top = _winTopStart + dy;
     }
@@ -111,37 +129,19 @@ public partial class MainWindow : Window
         if (!_hasDragged)
             OnPetTap();
         else
+        {
+            PetInteractionSounds.PlayDragEnd();
             SnapAndMaybeEdgeHide();
+        }
 
         e.Handled = true;
     }
 
     private void OnPetTap()
     {
-        TryPlayClickSound();
+        PetInteractionSounds.PlayTap(_settings);
         if (_settings.ShowBubbleTips)
             ShowBubble(BubbleQuotes.Next());
-    }
-
-    private void TryPlayClickSound()
-    {
-        try
-        {
-            var soundPath = _settings.ClickSoundPath;
-            if (!string.IsNullOrWhiteSpace(soundPath) && File.Exists(soundPath))
-            {
-                using var p = new SoundPlayer(soundPath);
-                p.Play();
-            }
-            else
-            {
-                SystemSounds.Asterisk.Play();
-            }
-        }
-        catch
-        {
-            SystemSounds.Beep.Play();
-        }
     }
 
     private void ShowBubble(string text)
@@ -149,192 +149,6 @@ public partial class MainWindow : Window
         BubbleText.Text = text;
         BubblePopup.IsOpen = false;
         BubblePopup.IsOpen = true;
-    }
-
-    private void WindowOnMouseRightButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        if (!IsVisible)
-            return;
-        var menu = BuildMainContextMenu();
-        menu.PlacementTarget = this;
-        menu.IsOpen = true;
-        e.Handled = true;
-    }
-
-    private ContextMenu BuildMainContextMenu()
-    {
-        var menu = new ContextMenu();
-
-        var exitItem = new MenuItem { Header = "退出程序" };
-        exitItem.Click += (_, _) => ExitApplication();
-        menu.Items.Add(exitItem);
-
-        var startupItem = new MenuItem
-        {
-            Header = "开机自启",
-            IsCheckable = true,
-            IsChecked = _settings.RunAtStartup
-        };
-        startupItem.Click += (_, _) =>
-        {
-            _settings.RunAtStartup = !_settings.RunAtStartup;
-            startupItem.IsChecked = _settings.RunAtStartup;
-            var exe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName ?? "";
-            if (!string.IsNullOrEmpty(exe))
-                StartupHelper.SetEnabled(_settings.RunAtStartup, exe);
-            Persist();
-        };
-        menu.Items.Add(startupItem);
-
-        menu.Items.Add(new Separator());
-
-        menu.Items.Add(BuildOpacitySubmenu());
-        menu.Items.Add(BuildScaleSubmenu());
-
-        var hideItem = new MenuItem { Header = _settings.PetVisible ? "隐藏宠物" : "显示宠物" };
-        hideItem.Click += (_, _) =>
-        {
-            TogglePetVisible();
-            hideItem.Header = _settings.PetVisible ? "隐藏宠物" : "显示宠物";
-        };
-        menu.Items.Add(hideItem);
-
-        menu.Items.Add(new Separator());
-
-        var edgeItem = new MenuItem
-        {
-            Header = "边缘自动隐藏",
-            IsCheckable = true,
-            IsChecked = _settings.EdgeAutoHide
-        };
-        edgeItem.Click += (_, _) =>
-        {
-            _settings.EdgeAutoHide = !_settings.EdgeAutoHide;
-            edgeItem.IsChecked = _settings.EdgeAutoHide;
-            if (!_settings.EdgeAutoHide)
-                RestoreFromEdgeHide();
-            Persist();
-        };
-        menu.Items.Add(edgeItem);
-
-        var panelItem = new MenuItem
-        {
-            Header = "显示天气/时间/网速",
-            IsCheckable = true,
-            IsChecked = _settings.ShowSidePanel
-        };
-        panelItem.Click += (_, _) =>
-        {
-            _settings.ShowSidePanel = !_settings.ShowSidePanel;
-            panelItem.IsChecked = _settings.ShowSidePanel;
-            ApplySidePanelVisibility();
-            if (_settings.ShowSidePanel)
-                _netTimer.Start();
-            else
-                _netTimer.Stop();
-            Persist();
-        };
-        menu.Items.Add(panelItem);
-
-        var chimeItem = new MenuItem
-        {
-            Header = "整点报时",
-            IsCheckable = true,
-            IsChecked = _settings.HourlyChime
-        };
-        chimeItem.Click += (_, _) =>
-        {
-            _settings.HourlyChime = !_settings.HourlyChime;
-            chimeItem.IsChecked = _settings.HourlyChime;
-            Persist();
-        };
-        menu.Items.Add(chimeItem);
-
-        var bubbleItem = new MenuItem
-        {
-            Header = "点击显示吐槽气泡",
-            IsCheckable = true,
-            IsChecked = _settings.ShowBubbleTips
-        };
-        bubbleItem.Click += (_, _) =>
-        {
-            _settings.ShowBubbleTips = !_settings.ShowBubbleTips;
-            bubbleItem.IsChecked = _settings.ShowBubbleTips;
-            Persist();
-        };
-        menu.Items.Add(bubbleItem);
-
-        menu.Items.Add(new Separator());
-        menu.Items.Add(BuildSkinSubmenu());
-
-        var trayItem = new MenuItem { Header = "最小化到托盘" };
-        trayItem.Click += (_, _) => MinimizeToTray();
-        menu.Items.Add(trayItem);
-
-        return menu;
-    }
-
-    private MenuItem BuildOpacitySubmenu()
-    {
-        var root = new MenuItem { Header = "透明度" };
-        foreach (var op in new[] { 1.0, 0.9, 0.75, 0.6, 0.45 })
-        {
-            var v = op;
-            var item = new MenuItem { Header = $"{(int)(op * 100)}%" };
-            item.Click += (_, _) =>
-            {
-                _settings.Opacity = v;
-                Opacity = v;
-                Persist();
-            };
-            root.Items.Add(item);
-        }
-
-        return root;
-    }
-
-    private MenuItem BuildScaleSubmenu()
-    {
-        var root = new MenuItem { Header = "大小缩放" };
-        foreach (var s in new[] { 0.75, 1.0, 1.25, 1.5, 2.0 })
-        {
-            var v = s;
-            var item = new MenuItem { Header = $"{(int)(s * 100)}%" };
-            item.Click += (_, _) =>
-            {
-                _settings.Scale = v;
-                RootScale.ScaleX = v;
-                RootScale.ScaleY = v;
-                Persist();
-            };
-            root.Items.Add(item);
-        }
-
-        return root;
-    }
-
-    private MenuItem BuildSkinSubmenu()
-    {
-        var root = new MenuItem { Header = "切换皮肤" };
-        foreach (var name in _skinLoader.ListSkinNames())
-        {
-            var n = name;
-            var item = new MenuItem { Header = n, IsCheckable = true, IsChecked = n == _settings.SkinName };
-            item.Click += (_, _) =>
-            {
-                _settings.SkinName = n;
-                ReloadSkinFrames();
-                foreach (MenuItem child in root.Items)
-                    child.IsChecked = child.Header as string == n;
-                Persist();
-            };
-            root.Items.Add(item);
-        }
-
-        if (root.Items.Count == 0)
-            root.Items.Add(new MenuItem { Header = "(放入 Skins\\名称\\*.png)", IsEnabled = false });
-
-        return root;
     }
 
     private void TogglePetVisible()
@@ -528,12 +342,24 @@ public partial class MainWindow : Window
             if (now.Minute == 0 && now.Second <= 1 && _lastChimeHour != now.Hour)
             {
                 _lastChimeHour = now.Hour;
-                try { SystemSounds.Exclamation.Play(); } catch { /* ignore */ }
+                try { System.Media.SystemSounds.Exclamation.Play(); } catch { /* ignore */ }
             }
         }
 
         if (_settings.ShowSidePanel && DateTime.Now.Second % 12 == 0)
             _ = RefreshWeatherAsync();
+
+        if (_settings.ProactiveCareEnabled
+            && _settings.PetVisible
+            && IsVisible
+            && !PetHitArea.IsMouseCaptured
+            && DateTime.UtcNow >= _nextCareUtc)
+        {
+            _nextCareUtc = DateTime.UtcNow.AddSeconds(_rng.Next(120, 301));
+            ShowBubble(CareQuotes.Next());
+            if (_settings.ProactiveCareSound)
+                PetInteractionSounds.PlayCarePing();
+        }
     }
 
     private async Task RefreshWeatherAsync()

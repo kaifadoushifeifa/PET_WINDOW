@@ -1,0 +1,39 @@
+<Window x:Class="PetWindow.HudTokenWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="二次元生成 · API"
+        Width="420"
+        Height="340"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="False">
+  <Window.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Themes/GameHud.xaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Window.Resources>
+  <Border Style="{StaticResource GameHudPanelBorder}" Margin="10">
+    <StackPanel>
+      <TextBlock Style="{StaticResource GameHudTitle}" Text="云端 Token"/>
+      <TextBlock TextWrapping="Wrap" Foreground="#CCdde8ff" FontSize="11" Margin="0,0,0,8"
+                 Text="在 huggingface.co 注册 → Settings → Access Tokens（Read）。填入后云端 AnimeGAN 推理效果更好；留空则仅用本地滤镜。"/>
+      <TextBlock Text="Access Token" Foreground="{StaticResource GameHudCyan}" FontSize="11" Margin="0,4,0,2"/>
+      <TextBox x:Name="TokenBox" Height="28" VerticalContentAlignment="Center"
+               Background="#33000000" Foreground="#FFeef6ff" CaretBrush="#FF5dffe3"
+               BorderBrush="#FFe8c547" BorderThickness="1"/>
+      <TextBlock Text="模型 ID（可改）" Foreground="{StaticResource GameHudCyan}" FontSize="11" Margin="0,10,0,2"/>
+      <TextBox x:Name="ModelBox" Height="28" VerticalContentAlignment="Center"
+               Background="#33000000" Foreground="#FFeef6ff" CaretBrush="#FF5dffe3"
+               BorderBrush="#FFe8c547" BorderThickness="1"/>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+        <Button x:Name="BtnCancel" Content="取消" Width="100" Margin="0,0,8,0" Style="{StaticResource GameHudButton}" Click="BtnCancel_OnClick"/>
+        <Button x:Name="BtnSave" Content="保存" Width="100" Style="{StaticResource GameHudButton}" Click="BtnSave_OnClick"/>
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</Window>

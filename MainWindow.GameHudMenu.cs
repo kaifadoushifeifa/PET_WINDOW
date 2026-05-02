@@ -54,93 +54,86 @@ public partial class MainWindow
         var title = new TextBlock { Style = HudStyle("GameHudTitle"), Text = "✿ 宠物菜单" };
         stack.Children.Add(title);
 
-        stack.Children.Add(MkBtn("✦ 从照片生成二次元皮肤", (_, _) =>
-        {
-            CloseGameMenu();
-            _ = GenerateAnimeSkinFromPhotoAsync();
-        }));
+        void RefreshToggle(object tag, string text) => RefreshBtnRecursive(stack, tag, text);
 
-        stack.Children.Add(MkBtn("⚙ 配置云端 Token / 模型…", (_, _) =>
-        {
-            CloseGameMenu();
-            var dlg = new HudTokenWindow(_settings) { Owner = this };
-            dlg.ShowDialog();
-        }));
+        stack.Children.Add(MkExpandableGroup("外观",
+            MkFlyoutBtn("透明度 ▸", BuildOpacityFlyout(popup)),
+            MkFlyoutBtn("大小缩放 ▸", BuildScaleFlyout(popup)),
+            MkFlyoutBtn("切换皮肤 ▸", BuildSkinFlyout(popup))));
 
-        stack.Children.Add(MkSep());
+        stack.Children.Add(MkExpandableGroup("窗口与显示",
+            MkBtn(ToggleLabel("开机自启", _settings.RunAtStartup), (_, _) =>
+            {
+                _settings.RunAtStartup = !_settings.RunAtStartup;
+                var exe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName ?? "";
+                if (!string.IsNullOrEmpty(exe))
+                    StartupHelper.SetEnabled(_settings.RunAtStartup, exe);
+                Persist();
+                RefreshToggle("startup", ToggleLabel("开机自启", _settings.RunAtStartup));
+            }, "startup"),
+            MkBtn(ToggleLabel("宠物可见", _settings.PetVisible), (_, _) =>
+            {
+                TogglePetVisible();
+                RefreshToggle("petvis", ToggleLabel("宠物可见", _settings.PetVisible));
+            }, "petvis"),
+            MkBtn(ToggleLabel("边缘自动隐藏", _settings.EdgeAutoHide), (_, _) =>
+            {
+                _settings.EdgeAutoHide = !_settings.EdgeAutoHide;
+                if (!_settings.EdgeAutoHide)
+                    RestoreFromEdgeHide();
+                Persist();
+                RefreshToggle("edge", ToggleLabel("边缘自动隐藏", _settings.EdgeAutoHide));
+            }, "edge"),
+            MkBtn(ToggleLabel("天气 / 时间 / 网速侧栏", _settings.ShowSidePanel), (_, _) =>
+            {
+                _settings.ShowSidePanel = !_settings.ShowSidePanel;
+                ApplySidePanelVisibility();
+                if (_settings.ShowSidePanel)
+                    _netTimer.Start();
+                else
+                    _netTimer.Stop();
+                Persist();
+                RefreshToggle("panel", ToggleLabel("天气 / 时间 / 网速侧栏", _settings.ShowSidePanel));
+            }, "panel")));
 
-        stack.Children.Add(MkBtn(ToggleLabel("开机自启", _settings.RunAtStartup), (_, _) =>
-        {
-            _settings.RunAtStartup = !_settings.RunAtStartup;
-            var exe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName ?? "";
-            if (!string.IsNullOrEmpty(exe))
-                StartupHelper.SetEnabled(_settings.RunAtStartup, exe);
-            Persist();
-            RefreshBtn(stack, "startup", ToggleLabel("开机自启", _settings.RunAtStartup));
-        }, "startup"));
+        stack.Children.Add(MkExpandableGroup("提醒与气泡",
+            MkBtn(ToggleLabel("整点报时", _settings.HourlyChime), (_, _) =>
+            {
+                _settings.HourlyChime = !_settings.HourlyChime;
+                Persist();
+                RefreshToggle("chime", ToggleLabel("整点报时", _settings.HourlyChime));
+            }, "chime"),
+            MkBtn(ToggleLabel("点击吐槽气泡", _settings.ShowBubbleTips), (_, _) =>
+            {
+                _settings.ShowBubbleTips = !_settings.ShowBubbleTips;
+                Persist();
+                RefreshToggle("bubble", ToggleLabel("点击吐槽气泡", _settings.ShowBubbleTips));
+            }, "bubble"),
+            MkBtn(ToggleLabel("主动问候关心", _settings.ProactiveCareEnabled), (_, _) =>
+            {
+                _settings.ProactiveCareEnabled = !_settings.ProactiveCareEnabled;
+                Persist();
+                RefreshToggle("care", ToggleLabel("主动问候关心", _settings.ProactiveCareEnabled));
+            }, "care"),
+            MkBtn(ToggleLabel("问候轻提示音", _settings.ProactiveCareSound), (_, _) =>
+            {
+                _settings.ProactiveCareSound = !_settings.ProactiveCareSound;
+                Persist();
+                RefreshToggle("caresnd", ToggleLabel("问候轻提示音", _settings.ProactiveCareSound));
+            }, "caresnd")));
 
-        stack.Children.Add(MkBtn(ToggleLabel("宠物可见", _settings.PetVisible), (_, _) =>
-        {
-            TogglePetVisible();
-            RefreshBtn(stack, "petvis", ToggleLabel("宠物可见", _settings.PetVisible));
-        }, "petvis"));
-
-        stack.Children.Add(MkSep());
-
-        stack.Children.Add(MkFlyoutBtn("透明度 ▸", BuildOpacityFlyout(popup)));
-        stack.Children.Add(MkFlyoutBtn("大小缩放 ▸", BuildScaleFlyout(popup)));
-        stack.Children.Add(MkFlyoutBtn("切换皮肤 ▸", BuildSkinFlyout(popup)));
-
-        stack.Children.Add(MkSep());
-
-        stack.Children.Add(MkBtn(ToggleLabel("边缘自动隐藏", _settings.EdgeAutoHide), (_, _) =>
-        {
-            _settings.EdgeAutoHide = !_settings.EdgeAutoHide;
-            if (!_settings.EdgeAutoHide)
-                RestoreFromEdgeHide();
-            Persist();
-            RefreshBtn(stack, "edge", ToggleLabel("边缘自动隐藏", _settings.EdgeAutoHide));
-        }, "edge"));
-
-        stack.Children.Add(MkBtn(ToggleLabel("天气 / 时间 / 网速侧栏", _settings.ShowSidePanel), (_, _) =>
-        {
-            _settings.ShowSidePanel = !_settings.ShowSidePanel;
-            ApplySidePanelVisibility();
-            if (_settings.ShowSidePanel)
-                _netTimer.Start();
-            else
-                _netTimer.Stop();
-            Persist();
-            RefreshBtn(stack, "panel", ToggleLabel("天气 / 时间 / 网速侧栏", _settings.ShowSidePanel));
-        }, "panel"));
-
-        stack.Children.Add(MkBtn(ToggleLabel("整点报时", _settings.HourlyChime), (_, _) =>
-        {
-            _settings.HourlyChime = !_settings.HourlyChime;
-            Persist();
-            RefreshBtn(stack, "chime", ToggleLabel("整点报时", _settings.HourlyChime));
-        }, "chime"));
-
-        stack.Children.Add(MkBtn(ToggleLabel("点击吐槽气泡", _settings.ShowBubbleTips), (_, _) =>
-        {
-            _settings.ShowBubbleTips = !_settings.ShowBubbleTips;
-            Persist();
-            RefreshBtn(stack, "bubble", ToggleLabel("点击吐槽气泡", _settings.ShowBubbleTips));
-        }, "bubble"));
-
-        stack.Children.Add(MkBtn(ToggleLabel("主动问候关心", _settings.ProactiveCareEnabled), (_, _) =>
-        {
-            _settings.ProactiveCareEnabled = !_settings.ProactiveCareEnabled;
-            Persist();
-            RefreshBtn(stack, "care", ToggleLabel("主动问候关心", _settings.ProactiveCareEnabled));
-        }, "care"));
-
-        stack.Children.Add(MkBtn(ToggleLabel("问候轻提示音", _settings.ProactiveCareSound), (_, _) =>
-        {
-            _settings.ProactiveCareSound = !_settings.ProactiveCareSound;
-            Persist();
-            RefreshBtn(stack, "caresnd", ToggleLabel("问候轻提示音", _settings.ProactiveCareSound));
-        }, "caresnd"));
+        stack.Children.Add(MkExpandableGroup("生成与配置",
+            MkBtn("✦ 从照片生成二次元皮肤", (_, _) =>
+            {
+                CloseGameMenu();
+                _ = GenerateAnimeSkinFromPhotoAsync();
+            }),
+            MkBtn("⚙ 配置云端 Token / 模型…", (_, _) =>
+            {
+                CloseGameMenu();
+                var dlg = new HudTokenWindow(_settings) { Owner = this };
+                dlg.ShowDialog();
+            })));
 
         stack.Children.Add(MkSep());
 
@@ -176,13 +169,47 @@ public partial class MainWindow
         return b;
     }
 
-    private static void RefreshBtn(System.Windows.Controls.Panel stack, object tag, string text)
+    private static void RefreshBtnRecursive(DependencyObject root, object tag, string text)
     {
-        foreach (var c in stack.Children)
+        if (root is System.Windows.Controls.Button b && Equals(b.Tag, tag))
         {
-            if (c is System.Windows.Controls.Button b && Equals(b.Tag, tag))
-                b.Content = text;
+            b.Content = text;
+            return;
         }
+
+        var n = VisualTreeHelper.GetChildrenCount(root);
+        for (var i = 0; i < n; i++)
+            RefreshBtnRecursive(VisualTreeHelper.GetChild(root, i), tag, text);
+    }
+
+    private UIElement MkExpandableGroup(string title, params UIElement[] items)
+    {
+        var outer = new StackPanel();
+        var head = new System.Windows.Controls.Button
+        {
+            Content = $"▶ {title}",
+            Style = TryFindResource("GameHudButton") as Style,
+            HorizontalContentAlignment = System.Windows.HorizontalAlignment.Left,
+            Tag = "expand_header"
+        };
+        var body = new StackPanel
+        {
+            Visibility = Visibility.Collapsed,
+            Margin = new Thickness(6, 0, 0, 4)
+        };
+        foreach (var el in items)
+            body.Children.Add(el);
+
+        head.Click += (_, _) =>
+        {
+            var open = body.Visibility != Visibility.Visible;
+            body.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+            head.Content = open ? $"▼ {title}" : $"▶ {title}";
+        };
+
+        outer.Children.Add(head);
+        outer.Children.Add(body);
+        return outer;
     }
 
     private Border MkSep() => new() { Style = HudStyle("GameHudSep") };

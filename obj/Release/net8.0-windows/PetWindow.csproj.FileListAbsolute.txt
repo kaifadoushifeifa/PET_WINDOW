@@ -59,3 +59,5 @@ D:\study\cursor1\pet_window\bin\Release\net8.0-windows\Skins\mydog\1_05.png
 D:\study\cursor1\pet_window\bin\Release\net8.0-windows\Skins\mydog\1_06.png
 D:\study\cursor1\pet_window\bin\Release\net8.0-windows\Skins\mydog\1_07.png
 D:\study\cursor1\pet_window\bin\Release\net8.0-windows\Skins\mydog\1_08.png
+D:\study\cursor1\pet_window\obj\Release\net8.0-windows\StartupSplashWindow.baml
+D:\study\cursor1\pet_window\obj\Release\net8.0-windows\StartupSplashWindow.g.cs

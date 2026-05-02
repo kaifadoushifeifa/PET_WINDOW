@@ -7,6 +7,8 @@
   <SolidColorBrush x:Key="HudPanelBorder" Color="#5599b8d4"/>
   <SolidColorBrush x:Key="HudAccent" Color="#FF7dd3c0"/>
   <SolidColorBrush x:Key="HudAccentSoft" Color="#FF5aab9a"/>
+  <!-- 表单标签等次要高亮（HudTokenWindow 等） -->
+  <SolidColorBrush x:Key="GameHudCyan" Color="#FF5dffe3"/>
   <SolidColorBrush x:Key="HudText" Color="#FFeef2f8"/>
   <SolidColorBrush x:Key="HudTextMuted" Color="#FFa8b4c8"/>
 

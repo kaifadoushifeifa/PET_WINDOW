@@ -17,6 +17,8 @@ public partial class MainWindow : Window
 {
     private const double SnapPx = 28;
     private const double PeekPx = 40;
+    private const double PetScaleMin = 0.5;
+    private const double PetScaleMax = 2.5;
     private readonly AppSettings _settings = SettingsStore.Load();
     private readonly SkinLoader _skinLoader;
     private readonly DispatcherTimer _animTimer;
@@ -76,6 +78,7 @@ public partial class MainWindow : Window
         PetHitArea.MouseLeave += (_, _) => ScheduleEdgeHide();
 
         MouseRightButtonUp += WindowOnMouseRightButtonUp;
+        PreviewMouseWheel += MainWindow_OnPreviewMouseWheel;
 
         ApplySettingsFromStore();
         ReloadSkinFrames();
@@ -299,10 +302,7 @@ public partial class MainWindow : Window
 
         Opacity = Math.Clamp(_settings.Opacity, 0.3, 1.0);
         _settings.Opacity = Opacity;
-        var scale = Math.Clamp(_settings.Scale, 0.5, 2.5);
-        _settings.Scale = scale;
-        RootScale.ScaleX = scale;
-        RootScale.ScaleY = scale;
+        ApplyPetScale(_settings.Scale, persist: false);
 
         if (!double.IsNaN(_settings.WindowLeft) && !double.IsNaN(_settings.WindowTop))
         {
@@ -317,6 +317,27 @@ public partial class MainWindow : Window
 
         ApplyPetVisibility();
         ApplySidePanelVisibility();
+    }
+
+    /// <summary>应用宠物缩放（RootScale），可选写入配置文件。</summary>
+    private void ApplyPetScale(double scale, bool persist)
+    {
+        var s = Math.Clamp(scale, PetScaleMin, PetScaleMax);
+        _settings.Scale = s;
+        RootScale.ScaleX = s;
+        RootScale.ScaleY = s;
+        if (persist)
+            Persist();
+    }
+
+    private void MainWindow_OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (Keyboard.Modifiers != ModifierKeys.Control)
+            return;
+
+        e.Handled = true;
+        var delta = e.Delta / 120.0 * 0.08;
+        ApplyPetScale(_settings.Scale + delta, persist: true);
     }
 
     private void Persist()

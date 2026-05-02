@@ -256,10 +256,7 @@ public partial class MainWindow
             };
             row.Click += (_, _) =>
             {
-                _settings.Scale = v;
-                RootScale.ScaleX = v;
-                RootScale.ScaleY = v;
-                Persist();
+                ApplyPetScale(v, persist: true);
                 rootPopup.IsOpen = false;
             };
             sp.Children.Add(row);

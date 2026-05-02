@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PetWindow")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+539b522d5eaef9a9be0e4677afcce6b6f04f4674")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+79bf43ab5aefd05aa29e465de49da1f97b2c8fca")]
 [assembly: System.Reflection.AssemblyProductAttribute("PetWindow")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PetWindow")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

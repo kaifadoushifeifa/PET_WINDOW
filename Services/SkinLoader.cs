@@ -30,7 +30,8 @@ public sealed class SkinLoader
         if (!Directory.Exists(dir))
             return Array.Empty<BitmapImage>();
 
-        var files = Directory.GetFiles(dir)
+        // 包含子目录（例如 Skins\mytest\images\*.png），仅根目录时行为与原来一致
+        var files = Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories)
             .Where(f =>
             {
                 var ext = Path.GetExtension(f).ToLowerInvariant();
